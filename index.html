@@ -7,7 +7,7 @@ Single-file HTML dashboard with:
 - Save Folders (create folders, saves, export/import)
 - LocalStorage persistence
 
-Drop into a .html file and open in a modern browser. Works offline.
+Added: simple login / signup overlay (single account, stored in localStorage). After successful login/signup the overlay hides and you return to the original panel.
 -->
 
 <!doctype html>
@@ -57,10 +57,36 @@ Drop into a .html file and open in a modern browser. Works offline.
     label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
     .row{display:flex;gap:8px}
     .ks{font-size:12px;color:var(--muted)}
+
+    /* Login overlay styles (keeps the same aesthetic) */
+    #loginOverlay{position:fixed;inset:0;background:linear-gradient(180deg,rgba(2,4,10,0.95),rgba(2,4,10,0.98));display:flex;align-items:center;justify-content:center;z-index:2000}
+    .login-card{width:420px;background:linear-gradient(180deg,#071426,#0a1624);padding:18px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.6);}
+    .login-card h2{margin:0 0 8px 0}
+    .login-row{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+    .login-row input{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    .login-actions{display:flex;gap:8px;justify-content:center;margin-top:8px}
+
     @media(max-width:900px){.app{grid-template-columns:1fr; padding:12px}.grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
+
+  <!-- LOGIN / SIGNUP OVERLAY (single account) -->
+  <div id="loginOverlay" aria-hidden="false">
+    <div class="login-card" role="dialog" aria-label="Login to Yoda's Gaming Galaxy">
+      <h2>Welcome — please sign in</h2>
+      <div class="login-row">
+        <input id="loginUser" placeholder="Username" autocomplete="username" />
+        <input id="loginPass" placeholder="Password" type="password" autocomplete="current-password" />
+      </div>
+      <div class="login-actions">
+        <button id="loginSubmit" class="btn">Login</button>
+        <button id="signupSubmit" class="btn ghost">Sign up</button>
+      </div>
+      <div style="margin-top:10px;text-align:center;color:var(--muted);font-size:13px" id="loginMsg">Create an account or log in to continue.</div>
+    </div>
+  </div>
+
   <div class="app">
     <aside class="sidebar card">
       <div class="brand"><div class="logo">YG</div><div><h1>Yoda's Gaming Galaxy</h1><div class="ks">Control Panel</div></div></div>
@@ -194,6 +220,52 @@ Drop into a .html file and open in a modern browser. Works offline.
   </div>
 
   <div class="toast-wrap" id="toastWrap"></div>
+
+  <!-- Login script: single account (localStorage). Hides overlay on successful login/signup. -->
+  <script>
+    (function(){
+      const KEY = 'ygg_account_v1';
+      const overlay = document.getElementById('loginOverlay');
+      const userIn = document.getElementById('loginUser');
+      const passIn = document.getElementById('loginPass');
+      const loginBtn = document.getElementById('loginSubmit');
+      const signupBtn = document.getElementById('signupSubmit');
+      const msgEl = document.getElementById('loginMsg');
+
+      function setMsg(t){ msgEl.textContent = t || ''; }
+      function getAccount(){ try{return JSON.parse(localStorage.getItem(KEY)); }catch(e){return null} }
+      function saveAccount(u,p){ localStorage.setItem(KEY, JSON.stringify({user:u,pass:p})); }
+      function setSession(u){ localStorage.setItem('ygg_session', JSON.stringify({user:u,ts:Date.now()})); }
+      function getSession(){ try{return JSON.parse(localStorage.getItem('ygg_session'));}catch(e){return null} }
+
+      const acct = getAccount();
+      const sess = getSession();
+      // If there's a valid session for the saved user, skip login
+      if(sess && acct && sess.user === acct.user){ overlay.style.display = 'none'; return; }
+
+      // Show friendly message
+      if(!acct) setMsg('No account found — please sign up'); else setMsg('Sign in with your credentials');
+
+      loginBtn.addEventListener('click', ()=>{
+        const u = (userIn.value||'').trim(); const p = passIn.value||'';
+        if(!u || !p){ setMsg('Enter username and password'); return; }
+        const a = getAccount(); if(!a){ setMsg('No account exists. Please sign up.'); return; }
+        if(a.user === u && a.pass === p){ setMsg('Welcome — signing in...'); setSession(u); overlay.style.display='none'; setTimeout(()=>setMsg(''),300); }
+        else { setMsg('Invalid username or password'); }
+      });
+
+      signupBtn.addEventListener('click', ()=>{
+        const u = (userIn.value||'').trim(); const p = passIn.value||'';
+        if(!u || !p){ setMsg('Enter username and password to sign up'); return; }
+        if(getAccount()){ setMsg('Account already exists. Use Login.'); return; }
+        saveAccount(u,p); setSession(u); setMsg('Account created — signing in...'); overlay.style.display='none'; setTimeout(()=>setMsg(''),300);
+      });
+
+      // allow Enter in password to trigger login
+      passIn.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ loginBtn.click(); } });
+
+    })();
+  </script>
 
   <script>
     // Simple persistent store
