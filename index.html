@@ -91,7 +91,7 @@ Added: simple login / signup overlay (single account, stored in localStorage). A
     <aside class="sidebar card">
       <div class="brand"><div class="logo">YG</div><div><h1>Yoda's Gaming Galaxy</h1><div class="ks">Control Panel</div></div></div>
       <nav class="menu">
-        <button data-panel="hub" class="active">🎮 Game Hub</button>
+        <button data-panel="hub" class="active">🏠 Main</button>
         <button data-panel="timers">⏱ Timers</button>
         <button data-panel="saves">💾 Save Folders</button>
         <button data-panel="notifications">🔔 Notifications</button>
@@ -421,14 +421,6 @@ Added: simple login / signup overlay (single account, stored in localStorage). A
   // Utilities
   function uid(){ return 'id_'+Math.random().toString(36).slice(2,10); }
 
-  // Keyboard shortcuts
-  window.addEventListener('keydown', (e)=>{
-    if(e.key==='n' || e.key==='N'){ document.getElementById('newGameBtn').click(); }
-    if(e.key==='t' || e.key==='T'){ document.getElementById('newTimerBtn').click(); }
-    if(e.key==='s' || e.key==='S'){ // try save focused form
-      const active = document.activeElement; if(active && active.id && (active.id.includes('game')||active.id.includes('timer'))){ document.getElementById('saveGame').click(); showToast('Saved (keyboard)'); }
-    }
-  });
 
   // small helpers
   function renderGamesDelayed(){ setTimeout(()=>renderGames(document.getElementById('searchGames').value),50); }
