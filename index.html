@@ -1,436 +1,252 @@
-<!--
-Yoda's Gaming Galaxy — Control Panel
-Single-file HTML dashboard with:
-- Game Hub (add/edit games, launch links)
-- Timers (multi timers with start/pause/reset)
-- Notifications (in-app toasts + browser notifications)
-- Save Folders (create folders, saves, export/import)
-- LocalStorage persistence
-
-Added: simple login / signup overlay (single account, stored in localStorage). After successful login/signup the overlay hides and you return to the original panel.
--->
-
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Yoda's Secret App — Main Panel</title>
-  <style>
-    :root{
-      --bg:#0b1020; --card:#0f1724; --muted:#9aa4c0; --accent:#7ee787; --accent-2:#7cc7ff; --glass: rgba(255,255,255,0.04);
-      --success:#4ade80; --danger:#fb7185; --glass-2: rgba(255,255,255,0.02);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-    }
-    html,body{height:100%;margin:0;background: linear-gradient(180deg,#04050a 0%, #071426 60%); color:#e6eef8}
-    .app{display:grid;grid-template-columns:260px 1fr; gap:18px; padding:22px; height:100vh; box-sizing:border-box}
-    .sidebar{background:linear-gradient(180deg,var(--card), rgba(12,16,28,0.95)); border-radius:12px;padding:16px;box-shadow:0 6px 22px rgba(0,0,0,0.6);display:flex;flex-direction:column}
-    .brand{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-    .logo{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700;color:#042;}
-    h1{font-size:14px;margin:0}
-    .menu{margin-top:12px;display:flex;flex-direction:column;gap:8px}
-    .menu button{background:transparent;border:0;color:var(--muted);text-align:left;padding:10px;border-radius:8px;cursor:pointer}
-    .menu button.active{background:var(--glass);color:#fff}
-    .main{display:flex;flex-direction:column; gap:18px}
-    .topbar{display:flex;justify-content:space-between;gap:12px}
-    .card{background:linear-gradient(180deg,var(--glass),transparent);border-radius:12px;padding:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.02)}
-    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
-    .full{grid-column:1/-1}
-    .games-list{display:flex;flex-direction:column;gap:10px}
-    .game{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;background:linear-gradient(90deg, rgba(255,255,255,0.02), transparent)}
-    .game img{width:56px;height:56px;border-radius:8px;object-fit:cover}
-    .meta{flex:1}
-    .meta h3{margin:0;font-size:15px}
-    .meta p{margin:2px 0 0;font-size:12px;color:var(--muted)}
-    .controls{display:flex;gap:8px}
-    .btn{background:var(--accent);border:0;padding:8px 10px;border-radius:8px;color:#042;cursor:pointer;font-weight:600}
-    .btn.ghost{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04)}
-    .timers{display:flex;flex-direction:column;gap:10px}
-    .timer{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:10px;background:var(--glass-2)}
-    .small{font-size:13px;color:var(--muted)}
-    .toast-wrap{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:999}
-    .toast{background:#061022;padding:10px;border-radius:10px;border-left:4px solid var(--accent-2);box-shadow:0 6px 22px rgba(0,0,0,0.6)}
-    .folder-list{display:flex;flex-direction:column;gap:8px}
-    .folder{padding:9px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent)}
-    .footer{margin-top:auto;font-size:12px;color:var(--muted);text-align:center}
-    input,textarea,select{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:#e6eef8}
-    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
-    .row{display:flex;gap:8px}
-    .ks{font-size:12px;color:var(--muted)}
-
-    /* Login overlay styles (keeps the same aesthetic) */
-    #loginOverlay{position:fixed;inset:0;background:linear-gradient(180deg,rgba(2,4,10,0.95),rgba(2,4,10,0.98));display:flex;align-items:center;justify-content:center;z-index:2000}
-    .login-card{width:420px;background:linear-gradient(180deg,#071426,#0a1624);padding:18px;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.6);}
-    .login-card h2{margin:0 0 8px 0}
-    .login-row{display:flex;flex-direction:column;gap:10px;margin-top:8px}
-    .login-row input{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
-    .login-actions{display:flex;gap:8px;justify-content:center;margin-top:8px}
-
-    @media(max-width:900px){.app{grid-template-columns:1fr; padding:12px}.grid{grid-template-columns:1fr}}
-  </style>
+<meta charset="utf-8" />
+<title>Fixed 3D Multiplayer Game</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+html,body { height:100%; margin:0; background:#111; color:#ddd; font-family: Inter, Arial, sans-serif; }
+#container { width:100%; height:100%; display:flex; flex-direction:column; }
+canvas { display:block; width:100%; height:100%; }
+#hud { position: absolute; left:12px; top:12px; z-index:10; background:rgba(0,0,0,0.25); padding:8px; border-radius:8px; }
+#controls { position: absolute; right:12px; top:12px; z-index:10; width:320px; background:rgba(0,0,0,0.35); padding:10px; border-radius:8px; font-size:13px; }
+#console { position: absolute; left:12px; bottom:12px; z-index:10; background:rgba(0,0,0,0.35); padding:10px; border-radius:8px; max-width:640px; max-height:220px; overflow:auto; font-size:13px; }
+button, input, textarea { font-family:inherit; font-size:13px; }
+.small { font-size:12px; padding:6px; }
+label { display:block; margin:6px 0 3px; }
+textarea { width:100%; height:70px; resize:vertical; background:#0b0b0b; color:#eee; border:1px solid #333; padding:6px; border-radius:4px; }
+.row { display:flex; gap:6px; align-items:center; margin-top:6px; }
+.muted { color:#aaa; font-size:12px; }
+#netStatus { color:#f5c; font-weight:600; }
+</style>
 </head>
 <body>
+<div id="container"></div>
 
-  <!-- LOGIN / SIGNUP OVERLAY (single account) -->
-  <div id="loginOverlay" aria-hidden="false">
-    <div class="login-card" role="dialog" aria-label="Login to Yoda's Gaming Galaxy">
-      <h2>Welcome — please sign in</h2>
-      <div class="login-row">
-        <input id="loginUser" placeholder="Username" autocomplete="username" />
-        <input id="loginPass" placeholder="Password" type="password" autocomplete="current-password" />
-      </div>
-      <div class="login-actions">
-        <button id="loginSubmit" class="btn">Login</button>
-        <button id="signupSubmit" class="btn ghost">Sign up</button>
-      </div>
-      <div style="margin-top:10px;text-align:center;color:var(--muted);font-size:13px" id="loginMsg">Create an account or log in to continue.</div>
-    </div>
+<div id="hud">
+  <div><strong>Score</strong></div>
+  <div id="score">You: 0</div>
+  <div class="muted">WASD to move • Mouse to look • Click to shoot</div>
+</div>
+
+<div id="controls">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div><strong>Controls & Multiplayer</strong></div>
+    <div id="netStatus">offline</div>
   </div>
 
-  <div class="app">
-    <aside class="sidebar card">
-      <div class="brand"><div class="logo">YG</div><div><h1>Yoda's Secret App</h1><div class="ks">Main Panel</div></div></div>
-      <nav class="menu">
-        <button data-panel="hub" class="active">🏠 Main</button>
-        <button data-panel="timers">⏱ Timers</button>
-        <button data-panel="saves">💾 Save Folders</button>
-        <button data-panel="notifications">🔔 Notifications</button>
-        <button data-panel="settings">⚙️ Settings</button>
-      </nav>
-      <div class="footer">Version 3.0 • Local only</div>
-    </aside>
-
-    <main class="main">
-      <div class="topbar">
-        <div class="card" style="display:flex;align-items:center;gap:12px;flex:1">
-          <div style="width:64px;height:64px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-weight:700;color:#042">YG</div>
-          <div>
-            <div style="font-weight:700">Welcome, User.</div>
-            <div class="small">Quick panel for timers, game launch, saves & notifications</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button id="newGameBtn" class="btn ghost">+ New Game</button>
-          <button id="newTimerBtn" class="btn">+ Timer</button>
-        </div>
-      </div>
-
-      <section id="panelHub" class="card">
-        <h2 style="margin:0 0 8px 0">Game Hub</h2>
-        <div class="grid">
-          <div>
-            <div class="card full" style="margin-bottom:12px">
-              <label>Search games</label>
-              <input id="searchGames" placeholder="Search by name, platform or tag" />
-            </div>
-
-            <div class="card full">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                <strong>My Games</strong>
-                <div><button id="importGames" class="btn ghost">Import</button> <button id="exportGames" class="btn ghost">Export</button></div>
-              </div>
-              <div class="games-list" id="gamesList"></div>
-            </div>
-          </div>
-
-          <div>
-            <div class="card full">
-              <strong>Add / Edit Game</strong>
-              <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
-                <input id="gameTitle" placeholder="Game title" />
-                <input id="gamePlatform" placeholder="Platform (PC, PS5, Switch...)" />
-                <input id="gameCover" placeholder="Cover image URL (optional)" />
-                <input id="gameLink" placeholder="Launch link (steam://, URL)" />
-                <input id="gameTags" placeholder="Comma separated tags" />
-                <div style="display:flex;gap:8px">
-                  <button id="saveGame" class="btn">Save Game</button>
-                  <button id="clearGame" class="btn ghost">Clear</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="card full" style="margin-top:12px">
-              <strong>Quick Actions</strong>
-              <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
-                <button id="openAllLinks" class="btn ghost">Open All Links</button>
-                <button id="notifyAllGames" class="btn">Notify: Play a game!</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="panelTimers" class="card" style="display:none">
-        <h2 style="margin:0 0 8px 0">Timers</h2>
-        <div style="display:flex;gap:12px;margin-bottom:12px">
-          <input id="timerLabel" placeholder="Label (e.g., Respawn)" />
-          <input id="timerMinutes" placeholder="Minutes" type="number" style="width:120px" />
-          <button id="addTimer" class="btn">Add Timer</button>
-        </div>
-        <div class="timers" id="timersList"></div>
-      </section>
-
-      <section id="panelSaves" class="card" style="display:none">
-        <h2 style="margin:0 0 8px 0">Save Folders</h2>
-        <div style="display:flex;gap:12px;margin-bottom:12px">
-          <input id="folderName" placeholder="New folder name" />
-          <button id="addFolder" class="btn">Create Folder</button>
-        </div>
-        <div class="grid">
-          <div>
-            <div class="card full">
-              <strong>Folders</strong>
-              <div class="folder-list" id="folders"></div>
-            </div>
-          </div>
-          <div>
-            <div class="card full">
-              <strong>Selected Folder</strong>
-              <div id="selectedFolderArea" style="margin-top:10px">
-                <div class="small">Choose a folder to see saves.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="panelNotifications" class="card" style="display:none">
-        <h2 style="margin:0 0 8px 0">Notifications</h2>
-        <div style="display:flex;gap:8px;margin-bottom:12px">
-          <button id="requestPerm" class="btn">Request Browser Notification Permission</button>
-          <button id="testNotif" class="btn ghost">Test Browser Notification</button>
-        </div>
-        <div class="small">In-app toasts also appear bottom-right. Use notifications for timer alarms or reminders.</div>
-      </section>
-
-      <section id="panelSettings" class="card" style="display:none">
-        <h2 style="margin:0 0 8px 0">Settings</h2>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <label>Theme Accent</label>
-          <input id="accentColor" placeholder="#7ee787 or css gradient" />
-          <div style="display:flex;gap:8px">
-            <button id="saveSettings" class="btn">Save Settings</button>
-            <button id="resetSettings" class="btn ghost">Reset</button>
-          </div>
-          <div class="small">Keyboard shortcuts: N = new game, T = new timer, S = save active form.</div>
-        </div>
-      </section>
-
-    </main>
+  <label>Local multiplayer</label>
+  <div class="row">
+    <button id="toggleSplit" class="small">Toggle Split-screen (Tab)</button>
+    <button id="spawnBot" class="small">Spawn Bot</button>
   </div>
 
-  <div class="toast-wrap" id="toastWrap"></div>
+  <label style="margin-top:10px">Online (manual WebRTC signaling)</label>
+  <div class="row">
+    <button id="createOffer" class="small">Create Offer</button>
+    <button id="createAnswer" class="small">Create Answer</button>
+  </div>
 
-  <!-- Login script: single account (localStorage). Hides overlay on successful login/signup. -->
-  <script>
-    (function(){
-      const KEY = 'ygg_account_v1';
-      const overlay = document.getElementById('loginOverlay');
-      const userIn = document.getElementById('loginUser');
-      const passIn = document.getElementById('loginPass');
-      const loginBtn = document.getElementById('loginSubmit');
-      const signupBtn = document.getElementById('signupSubmit');
-      const msgEl = document.getElementById('loginMsg');
+  <label>Local Offer / Paste from remote</label>
+  <textarea id="localOffer" placeholder="Offer or Answer text"></textarea>
 
-      function setMsg(t){ msgEl.textContent = t || ''; }
-      function getAccount(){ try{return JSON.parse(localStorage.getItem(KEY)); }catch(e){return null} }
-      function saveAccount(u,p){ localStorage.setItem(KEY, JSON.stringify({user:u,pass:p})); }
-      function setSession(u){ localStorage.setItem('ygg_session', JSON.stringify({user:u,ts:Date.now()})); }
-      function getSession(){ try{return JSON.parse(localStorage.getItem('ygg_session'));}catch(e){return null} }
+  <label>Remote Offer (paste if answering)</label>
+  <textarea id="remoteOffer" placeholder="Paste remote offer here"></textarea>
 
-      const acct = getAccount();
-      const sess = getSession();
-      // If there's a valid session for the saved user, skip login
-      if(sess && acct && sess.user === acct.user){ overlay.style.display = 'none'; return; }
+  <label>Remote Answer (paste if you created offer)</label>
+  <textarea id="remoteAnswer" placeholder="Paste remote answer here"></textarea>
 
-      // Show friendly message
-      if(!acct) setMsg('No account found — please sign up'); else setMsg('Sign in with your credentials');
+  <div class="row">
+    <button id="finalize" class="small">Finalize Connection</button>
+    <button id="disconnect" class="small">Disconnect</button>
+  </div>
 
-      loginBtn.addEventListener('click', ()=>{
-        const u = (userIn.value||'').trim(); const p = passIn.value||'';
-        if(!u || !p){ setMsg('Enter username and password'); return; }
-        const a = getAccount(); if(!a){ setMsg('No account exists. Please sign up.'); return; }
-        if(a.user === u && a.pass === p){ setMsg('Welcome — signing in...'); setSession(u); overlay.style.display='none'; setTimeout(()=>setMsg(''),300); }
-        else { setMsg('Invalid username or password'); }
-      });
+  <div style="margin-top:8px" class="muted">Manual copy/paste signaling. No server required. STUN servers used for P2P.</div>
+</div>
 
-      signupBtn.addEventListener('click', ()=>{
-        const u = (userIn.value||'').trim(); const p = passIn.value||'';
-        if(!u || !p){ setMsg('Enter username and password to sign up'); return; }
-        if(getAccount()){ setMsg('Account already exists. Use Login.'); return; }
-        saveAccount(u,p); setSession(u); setMsg('Account created — signing in...'); overlay.style.display='none'; setTimeout(()=>setMsg(''),300);
-      });
+<div id="console"></div>
 
-      // allow Enter in password to trigger login
-      passIn.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ loginBtn.click(); } });
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+const $ = id=>document.getElementById(id);
+const log = t=>{$('console').innerText = t+"\\n"+$('console').innerText;};
 
-    })();
-  </script>
+// --- Scene setup ---
+let renderer, scene, clock;
+let players = {}, projectiles=[], bots=[], localPlayerId='p_'+Math.random().toString(36).slice(2,9), splitScreen=false, scores={};
+scores[localPlayerId]=0;
+let peer=null;
 
-  <script>
-    // Simple persistent store
-    const STORAGE_KEY = 'ygg_panel_data_v1';
-    const defaults = {games:[], timers:[], folders:[], settings:{accent:'linear-gradient(135deg,var(--accent),var(--accent-2))'}};
+const container = document.getElementById('container');
+renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled=true;
+container.appendChild(renderer.domElement);
 
-    function loadStore(){
-      try{const raw = localStorage.getItem(STORAGE_KEY); return raw?JSON.parse(raw):structuredClone(defaults);}catch(e){console.error(e);return structuredClone(defaults);} }
-    function saveStore(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); }
-    let store = loadStore();
+const camera1 = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1,2000);
+const camera2 = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1,2000);
 
-    // UI wiring
-    const panels = document.querySelectorAll('.menu button');
-    panels.forEach(btn=>btn.addEventListener('click', ()=>{document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); showPanel(btn.dataset.panel);}));
-    function showPanel(name){document.querySelectorAll('main section').forEach(s=>s.style.display='none'); document.getElementById('panel'+capitalize(name)).style.display='block';}
-    function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1);} // simple
+const keys={}, mouseDown=false; 
+let pitch=0, yaw=0, pointerLocked=false;
+scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0b1220);
 
-    // Initial sample data if empty
-    if(store.games.length===0){store.games = [
-      {id:uid(),'title':'Hollow Legends','platform':'PC','cover':'','link':'https://store.steampowered.com/','tags':['rpg','singleplayer']},
-      {id:uid(),'title':'Space Rally','platform':'Switch','cover':'','link':'','tags':['racing','multiplayer']}
-    ]; saveStore();}
+const hemi = new THREE.HemisphereLight(0x88aaff,0x222244,0.6); scene.add(hemi);
+const dir = new THREE.DirectionalLight(0xffffff,0.7); dir.position.set(10,20,10); dir.castShadow=true; dir.shadow.mapSize.set(1024,1024); scene.add(dir);
 
-    // Games
-    const gamesList = document.getElementById('gamesList');
-    const gameTitle = document.getElementById('gameTitle');
-    const gamePlatform = document.getElementById('gamePlatform');
-    const gameCover = document.getElementById('gameCover');
-    const gameLink = document.getElementById('gameLink');
-    const gameTags = document.getElementById('gameTags');
-    let editingGameId = null;
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(120,120,40,40), new THREE.MeshStandardMaterial({color:0x23303f,roughness:0.9,metalness:0.02}));
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
 
-    function renderGames(filter=''){
-      gamesList.innerHTML='';
-      const q = filter.trim().toLowerCase();
-      store.games.filter(g=> !q || (g.title+g.platform+(g.tags||[]).join(' ')).toLowerCase().includes(q)).forEach(g=>{
-        const el = document.createElement('div'); el.className='game';
-        const img = document.createElement('img'); img.src = g.cover||placeholderFor(g.title);
-        const meta = document.createElement('div'); meta.className='meta';
-        const h = document.createElement('h3'); h.textContent = g.title;
-        const p = document.createElement('p'); p.textContent = g.platform + ' • ' + (g.tags?g.tags.join(', '):'');
-        meta.append(h,p);
-        const ctr = document.createElement('div'); ctr.className='controls';
-        const play = document.createElement('button'); play.className='btn'; play.textContent='Play'; play.onclick=()=>{ if(g.link){ window.open(g.link,'_blank'); } else showToast('No link saved for '+g.title); }
-        const edit = document.createElement('button'); edit.className='btn ghost'; edit.textContent='Edit'; edit.onclick=()=>{ populateEdit(g); }
-        const del = document.createElement('button'); del.className='btn ghost'; del.textContent='Delete'; del.onclick=()=>{ if(confirm('Delete '+g.title+' ?')){ store.games = store.games.filter(x=>x.id!==g.id); saveStore(); renderGames(document.getElementById('searchGames').value); showToast('Game deleted'); }}
-        ctr.append(play,edit,del);
-        el.append(img,meta,ctr); gamesList.appendChild(el);
-      });
+// obstacles
+function makeObstacle(x,z,r=1.2,h=2,color=0x556b8a){
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,12), new THREE.MeshStandardMaterial({color}));
+  m.position.set(x,h/2,z); m.castShadow=true; m.receiveShadow=true; scene.add(m); return m;
+}
+for(let i=0;i<25;i++){makeObstacle((Math.random()-0.5)*80,(Math.random()-0.5)*80,1+Math.random()*3,1+Math.random()*6,0x334455+Math.floor(Math.random()*0x333333));}
+
+// --- Player ---
+function createPlayer(id,isLocal=false,color=0x88ccff){
+  const mesh=new THREE.Mesh(new THREE.CapsuleGeometry(0.45,1.0,4,8),new THREE.MeshStandardMaterial({color}));
+  mesh.castShadow=true; mesh.position.set((Math.random()-0.5)*20,1,(Math.random()-0.5)*20); scene.add(mesh);
+  players[id]={id,mesh,pos:mesh.position.clone(),rot:new THREE.Euler(),color,isLocal}; scores[id]=scores[id]||0; return players[id];
+}
+createPlayer(localPlayerId,true,0x99ccff);
+
+let velocity=new THREE.Vector3(), moveSpeed=6.0, jumpStrength=6.0, canJump=true;
+
+function updateLocalPlayer(dt){
+  const p=players[localPlayerId]; if(!p)return;
+  p.rot.set(p.rot.x,yaw,p.rot.z);
+  const forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)).normalize();
+  const right=new THREE.Vector3().crossVectors(forward,new THREE.Vector3(0,1,0)).normalize();
+  let move=new THREE.Vector3();
+  if(keys['KeyW'])move.add(forward); if(keys['KeyS'])move.sub(forward);
+  if(keys['KeyA'])move.sub(right); if(keys['KeyD'])move.add(right);
+  if(move.lengthSq()>0){move.normalize().multiplyScalar(moveSpeed*dt); p.mesh.position.add(move);}
+  velocity.y-=9.8*dt; p.mesh.position.y+=velocity.y*dt;
+  if(p.mesh.position.y<1){p.mesh.position.y=1; velocity.y=0; canJump=true;}
+}
+
+// --- Shooting ---
+function shoot(fromId){
+  const shooter=players[fromId]; if(!shooter)return;
+  const dir=new THREE.Vector3(Math.sin(shooter.rot.y), Math.sin(shooter.rot.x), Math.cos(shooter.rot.y)).normalize();
+  const pos=shooter.mesh.position.clone().add(new THREE.Vector3(0,0.6,0)).add(dir.clone().multiplyScalar(1.0));
+  projectiles.push({pos,vel:dir.clone().multiplyScalar(35),owner:fromId,lifetime:3.0,mesh:makeProjectileMesh(pos)});
+}
+function makeProjectileMesh(pos){
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(0.12,8,8),new THREE.MeshStandardMaterial({emissive:0xffb070,emissiveIntensity:0.7}));
+  mesh.position.copy(pos); mesh.castShadow=true; scene.add(mesh); return mesh;
+}
+function updateProjectiles(dt){
+  for(let i=projectiles.length-1;i>=0;i--){
+    const p=projectiles[i]; p.lifetime-=dt;
+    if(p.lifetime<=0){scene.remove(p.mesh); projectiles.splice(i,1); continue;}
+    p.vel.y-=9.8*dt*0.2; p.pos.add(p.vel.clone().multiplyScalar(dt)); p.mesh.position.copy(p.pos);
+    for(const id in players){
+      const pl=players[id]; if(pl.mesh.position.distanceTo(p.pos)<0.8 && p.owner!==id){
+        scores[p.owner]=(scores[p.owner]||0)+1; pl.mesh.position.set((Math.random()-0.5)*20,1,(Math.random()-0.5)*20);
+        scene.remove(p.mesh); projectiles.splice(i,1); break;
+      }
     }
-
-    function placeholderFor(title){ // small generated gradient svg placeholder
-      const color1 = '#2b2f4a'; const color2 = '#4d7b9e';
-      return 'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='200' height='120'><rect width='100%' height='100%' fill='${color1}'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='Arial' font-size='18'>${escapeHtml(title)}</text></svg>`);
-    }
-
-    function escapeHtml(s){return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}
-
-    function populateEdit(g){ editingGameId = g.id; gameTitle.value=g.title; gamePlatform.value=g.platform; gameCover.value=g.cover; gameLink.value=g.link; gameTags.value=(g.tags||[]).join(','); }
-
-    document.getElementById('saveGame').addEventListener('click', ()=>{
-      const t=gameTitle.value.trim(); if(!t){ showToast('Give the game a title'); return; }
-      const obj = { id: editingGameId||uid(), title:t, platform:gamePlatform.value.trim(), cover:gameCover.value.trim(), link:gameLink.value.trim(), tags: gameTags.value.split(',').map(s=>s.trim()).filter(Boolean) };
-      if(editingGameId){ store.games = store.games.map(g=>g.id===editingGameId?obj:g); editingGameId=null; showToast('Game updated'); } else { store.games.push(obj); showToast('Game added'); }
-      [gameTitle,gamePlatform,gameCover,gameLink,gameTags].forEach(i=>i.value=''); saveStore(); renderGames(document.getElementById('searchGames').value);
-    });
-    document.getElementById('clearGame').addEventListener('click', ()=>{ editingGameId=null; [gameTitle,gamePlatform,gameCover,gameLink,gameTags].forEach(i=>i.value=''); });
-    document.getElementById('newGameBtn').addEventListener('click', ()=>{ document.querySelector('[data-panel="hub"]').click(); gameTitle.focus(); });
-    document.getElementById('searchGames').addEventListener('input', (e)=>renderGames(e.target.value));
-
-    // Export/Import
-    document.getElementById('exportGames').addEventListener('click', ()=>{ const blob = new Blob([JSON.stringify(store)],{type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='ygg_panel_export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); showToast('Export started'); });
-    document.getElementById('importGames').addEventListener('click', ()=>{
-      const input = document.createElement('input'); input.type='file'; input.accept='.json,application/json'; input.onchange=ev=>{
-        const f = ev.target.files[0]; if(!f) return; const reader = new FileReader(); reader.onload = ()=>{ try{ const d=JSON.parse(reader.result); store = {...defaults,...d}; saveStore(); renderAll(); showToast('Import complete'); }catch(err){showToast('Import failed: invalid file') } } ; reader.readAsText(f);
-      }; input.click();
-    });
-
-    // Timers
-    const timersList = document.getElementById('timersList');
-    document.getElementById('newTimerBtn').addEventListener('click', ()=>{ document.querySelector('[data-panel="timers"]').click(); document.getElementById('timerLabel').focus(); });
-    document.getElementById('addTimer').addEventListener('click', ()=>{ const label = document.getElementById('timerLabel').value.trim()||'Timer'; const mins = Math.max(0, parseFloat(document.getElementById('timerMinutes').value)||0); const end = Date.now() + mins*60000; const t = {id:uid(), label, duration:mins*60, remaining:mins*60, running:mins>0, end: mins>0?end:null }; store.timers.push(t); saveStore(); renderTimers(); document.getElementById('timerLabel').value=''; document.getElementById('timerMinutes').value=''; });
-
-    function renderTimers(){ timersList.innerHTML=''; store.timers.forEach(t=>{
-      const el = document.createElement('div'); el.className='timer';
-      const left = document.createElement('div'); left.innerHTML=`<div style="font-weight:700">${escapeHtml(t.label)}</div><div class="small">${formatSeconds(Math.max(0, t.remaining))}</div>`;
-      const ctr = document.createElement('div'); ctr.style.display='flex'; ctr.style.gap='8px';
-      const start = document.createElement('button'); start.className='btn'; start.textContent = t.running? 'Pause':'Start'; start.onclick=()=>{ toggleTimer(t.id); };
-      const reset = document.createElement('button'); reset.className='btn ghost'; reset.textContent='Reset'; reset.onclick=()=>{ resetTimer(t.id); };
-      const del = document.createElement('button'); del.className='btn ghost'; del.textContent='Delete'; del.onclick=()=>{ store.timers = store.timers.filter(x=>x.id!==t.id); saveStore(); renderTimers(); };
-      ctr.append(start,reset,del); el.append(left,ctr); timersList.appendChild(el);
-    }); }
-
-    function tickTimers(){ const now = Date.now(); let changed=false; store.timers.forEach(t=>{ if(t.running){ if(t.end){ t.remaining = Math.max(0, Math.round((t.end-now)/1000)); if(t.remaining===0){ t.running=false; t.end=null; changed=true; onTimerFinish(t); } } } }); if(changed) saveStore(); renderTimers(); }
-    setInterval(tickTimers,1000);
-
-    function toggleTimer(id){ store.timers = store.timers.map(t=>{ if(t.id!==id) return t; if(t.running){ return {...t,running:false,end:null}; } else { const end = Date.now()+t.remaining*1000; return {...t,running:true,end}; } }); saveStore(); renderTimers(); }
-    function resetTimer(id){ store.timers = store.timers.map(t=> t.id===id?{...t,remaining:t.duration, running:false, end:null}:t); saveStore(); renderTimers(); }
-    function onTimerFinish(t){ showToast('Timer finished: '+t.label); showBrowserNotification('Timer finished', {body:t.label}); }
-
-    function formatSeconds(s){ const mm = Math.floor(s/60).toString().padStart(2,'0'); const ss = Math.floor(s%60).toString().padStart(2,'0'); return mm+':'+ss; }
-
-    // Notifications
-    document.getElementById('requestPerm').addEventListener('click', async ()=>{ if(!('Notification' in window)){ showToast('Browser notifications not supported'); return; } const perm = await Notification.requestPermission(); showToast('Permission: '+perm); });
-    document.getElementById('testNotif').addEventListener('click', ()=>{ showBrowserNotification('Yoda\'s Gaming Galaxy','Test notification — all good!'); });
-
-    function showBrowserNotification(title, opts={}){ if(!('Notification' in window)) return; if(Notification.permission==='granted'){ try{ new Notification(title, opts); }catch(e){ console.warn(e); } } }
-
-    // Toasts (in-app)
-    const toastWrap = document.getElementById('toastWrap');
-    function showToast(message, timeout=3500){ const t = document.createElement('div'); t.className='toast'; t.textContent=message; toastWrap.appendChild(t); setTimeout(()=>{ t.style.opacity=0; t.style.transform='translateX(10px)'; setTimeout(()=>t.remove(),400); }, timeout); }
-
-    // Folders & Saves
-    const foldersEl = document.getElementById('folders');
-    const selectedFolderArea = document.getElementById('selectedFolderArea');
-    let selectedFolderId = null;
-
-    function renderFolders(){ foldersEl.innerHTML = ''; store.folders.forEach(f=>{
-      const el = document.createElement('div'); el.className='folder';
-      el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><strong>${escapeHtml(f.name)}</strong><div><button class='btn ghost' data-id='${f.id}' data-action='open'>Open</button> <button class='btn ghost' data-id='${f.id}' data-action='del'>Del</button></div></div>`;
-      foldersEl.appendChild(el);
-    });
-    foldersEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', (e)=>{ const id=b.dataset.id; const action=b.dataset.action; if(action==='open'){ selectedFolderId=id; renderSelectedFolder(); } else if(action==='del'){ if(confirm('Delete folder?')){ store.folders = store.folders.filter(x=>x.id!==id); if(selectedFolderId===id) selectedFolderId=null; saveStore(); renderFolders(); renderSelectedFolder(); } } }));
   }
+}
 
-  function renderSelectedFolder(){ if(!selectedFolderId){ selectedFolderArea.innerHTML='<div class="small">Choose a folder to see saves.</div>'; return; } const folder = store.folders.find(f=>f.id===selectedFolderId); if(!folder) { selectedFolderArea.innerHTML='<div class="small">Folder not found</div>'; return; }
-    selectedFolderArea.innerHTML='';
-    const head = document.createElement('div'); head.style.display='flex'; head.style.gap='8px'; head.style.alignItems='center'; head.innerHTML=`<div style='flex:1'><strong>${escapeHtml(folder.name)}</strong><div class='small'>${(folder.saves||[]).length} saves</div></div>`;
-    const addBtn = document.createElement('button'); addBtn.className='btn'; addBtn.textContent='New Save'; addBtn.onclick=()=>{ const name = prompt('Save name'); if(!name) return; const note = prompt('Optional note / JSON'); const saveObj = {id:uid(), name, note:note||'', timestamp:Date.now()}; folder.saves = folder.saves||[]; folder.saves.push(saveObj); saveStore(); renderSelectedFolder(); showToast('Save created'); };
-    const exportBtn = document.createElement('button'); exportBtn.className='btn ghost'; exportBtn.textContent='Export Folder'; exportBtn.onclick=()=>{ const blob = new Blob([JSON.stringify(folder,{spaces:2})],{type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download='ygg_folder_'+folder.name.replaceAll(' ','_')+'.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); };
-    const importBtn = document.createElement('button'); importBtn.className='btn ghost'; importBtn.textContent='Import Save'; importBtn.onclick=()=>{ const input = document.createElement('input'); input.type='file'; input.accept='application/json'; input.onchange=ev=>{ const f = ev.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = ()=>{ try{ const d=JSON.parse(r.result); if(Array.isArray(d)) { folder.saves = folder.saves||[]; folder.saves.push(...d); } else if(d.saves){ folder.saves = folder.saves||[]; folder.saves.push(...d.saves); } else { folder.saves = folder.saves||[]; folder.saves.push(d); } saveStore(); renderSelectedFolder(); showToast('Import done'); }catch(e){ showToast('Invalid file'); } }; r.readAsText(f); }; input.click(); };
-    head.append(addBtn, exportBtn, importBtn);
-    selectedFolderArea.appendChild(head);
-    const list = document.createElement('div'); list.style.marginTop='10px'; (folder.saves||[]).forEach(s=>{
-      const row = document.createElement('div'); row.className='folder'; row.style.display='flex'; row.style.justifyContent='space-between'; row.innerHTML = `<div><strong>${escapeHtml(s.name)}</strong><div class='small'>${new Date(s.timestamp).toLocaleString()}</div><div class='small'>${escapeHtml((s.note||'').slice(0,120))}</div></div>`;
-      const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px';
-      const down = document.createElement('button'); down.className='btn ghost'; down.textContent='Download'; down.onclick=()=>{ const blob = new Blob([JSON.stringify(s)],{type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download=`save_${s.name.replaceAll(' ','_')}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); };
-      const del = document.createElement('button'); del.className='btn ghost'; del.textContent='Delete'; del.onclick=()=>{ if(confirm('Delete save?')){ folder.saves = folder.saves.filter(x=>x.id!==s.id); saveStore(); renderSelectedFolder(); } };
-      actions.append(down,del); row.appendChild(actions); list.appendChild(row);
-    }); selectedFolderArea.appendChild(list);
+// --- Bots ---
+function spawnBot(){const id='bot_'+Math.random().toString(36).slice(2,7); const bot=createPlayer(id,false,0xff7070); bots.push(id); return id;}
+function updateBots(dt){for(const id of bots){const bot=players[id]; if(!bot)continue; bot.mesh.position.x+=(Math.random()-0.5)*dt*3; bot.mesh.position.z+=(Math.random()-0.5)*dt*3; if(Math.random()<dt*0.5)shoot(id); }}
+
+// --- WebRTC Peer Fix ---
+class ManualPeer{
+  constructor(isOfferer=false){
+    this.pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]});
+    this.dc=null; this.isConnected=false; this.onmessage=null; this.onopen=null;
+    this.pc.onicecandidate=()=>{};
+    this.pc.onconnectionstatechange=()=>{$('netStatus').innerText=this.pc.connectionState;};
+    this.pc.ondatachannel=ev=>{this.dc=ev.channel; this.setupDC();};
+    if(isOfferer){this.dc=this.pc.createDataChannel('game'); this.setupDC();}
   }
+  setupDC(){if(!this.dc)return; this.dc.onopen=()=>{this.isConnected=true; log('DataChannel open'); if(this.onopen)this.onopen(); $('netStatus').innerText='connected';};
+    this.dc.onclose=()=>{this.isConnected=false; log('DataChannel closed'); $('netStatus').innerText='closed';};
+    this.dc.onmessage=ev=>{try{const obj=JSON.parse(ev.data); if(this.onmessage)this.onmessage(obj);}catch(e){console.warn('bad msg',e);}};
+  }
+  async createOffer(){await this.pc.setLocalDescription(await this.pc.createOffer()); await this._waitForIceGatheringComplete(); return this.pc.localDescription.sdp;}
+  async createAnswer(remoteSdp){
+    await this.pc.setRemoteDescription(new RTCSessionDescription({type:'offer',sdp:remoteSdp}));
+    const ans = await this.pc.createAnswer(); await this.pc.setLocalDescription(ans);
+    await this._waitForIceGatheringComplete(); return this.pc.localDescription.sdp;
+  }
+  async finalizeWithAnswer(answerSdp){await this.pc.setRemoteDescription(new RTCSessionDescription({type:'answer',sdp:answerSdp}));}
+  async _waitForIceGatheringComplete(timeout=3000){if(this.pc.iceGatheringState==='complete')return new Promise(r=>r()); return new Promise(resolve=>{const check=()=>{if(this.pc.iceGatheringState==='complete')resolve();}; this.pc.addEventListener('icegatheringstatechange',check); setTimeout(resolve,timeout);});}
+  send(obj){if(this.dc&&this.dc.readyState==='open')this.dc.send(JSON.stringify(obj));}
+  close(){if(this.dc)this.dc.close(); if(this.pc)this.pc.close();}
+}
 
-  document.getElementById('addFolder').addEventListener('click', ()=>{ const name=document.getElementById('folderName').value.trim(); if(!name){ showToast('Folder name required'); return; } store.folders.push({id:uid(), name, saves:[]}); document.getElementById('folderName').value=''; saveStore(); renderFolders(); showToast('Folder created'); });
+// --- UI ---
+$('createOffer').addEventListener('click',async()=>{
+  peer=new ManualPeer(true); peer.onmessage=handleNetworkMessage; peer.onopen=()=>log('Peer open');
+  const sdp=await peer.createOffer(); $('localOffer').value=sdp; log('Offer created. Copy and send to remote.');
+});
+$('createAnswer').addEventListener('click',async()=>{
+  const remote=$('remoteOffer').value.trim(); if(!remote)return alert('Paste remote offer first.');
+  peer=new ManualPeer(false); peer.onmessage=handleNetworkMessage;
+  const answerSdp=await peer.createAnswer(remote); $('localOffer').value=answerSdp; log('Answer created. Copy and send back.');
+});
+$('finalize').addEventListener('click',async()=>{
+  if(!peer)return alert('No peer.'); const ans=$('remoteAnswer').value.trim(); if(!ans)return alert('Paste remote answer.');
+  await peer.finalizeWithAnswer(ans); log('Finalized connection.'); setupPeerMessaging(peer);
+});
+$('disconnect').addEventListener('click',()=>{if(peer){peer.close(); peer=null; $('netStatus').innerText='offline'; log('Disconnected');}});
 
-  // Settings
-  document.getElementById('saveSettings').addEventListener('click', ()=>{ const v=document.getElementById('accentColor').value.trim(); if(v){ store.settings.accent=v; saveStore(); showToast('Saved settings'); } else showToast('Enter an accent value'); });
-  document.getElementById('resetSettings').addEventListener('click', ()=>{ store.settings = defaults.settings; saveStore(); showToast('Settings reset'); });
+function setupPeerMessaging(peer){
+  peer.onmessage=handleNetworkMessage;
+  peer.onopen=()=>{const p=players[localPlayerId]; peer.send({t:'spawn',id:localPlayerId,pos:p.mesh.position.toArray(),rot:[p.rot.x,p.rot.y,p.rot.z],color:players[localPlayerId].color});};
+}
+function handleNetworkMessage(obj){
+  if(!obj||!obj.t)return;
+  if(obj.t==='spawn'){if(!players[obj.id])createPlayer(obj.id,false,obj.color||0xffddcc); players[obj.id].mesh.position.fromArray(obj.pos); players[obj.id].rot=new THREE.Euler(obj.rot[0],obj.rot[1],obj.rot[2]); log('Remote joined: '+obj.id);}
+  else if(obj.t==='state'){if(!players[obj.id])createPlayer(obj.id,false); const pl=players[obj.id]; pl.targetPos=new THREE.Vector3().fromArray(obj.pos); pl.targetRotY=obj.rotY;}
+  else if(obj.t==='shoot'){const pos=new THREE.Vector3().fromArray(obj.pos); const dir=new THREE.Vector3().fromArray(obj.dir); projectiles.push({pos:pos.clone(),vel:dir.clone().multiplyScalar(35),owner:obj.id,lifetime:3.0,mesh:makeProjectileMesh(pos)});}
+  else if(obj.t==='score'){scores[obj.id]=obj.score;}
+}
+setInterval(()=>{if(peer&&peer.isConnected){const p=players[localPlayerId]; peer.send({t:'state',id:localPlayerId,pos:p.mesh.position.toArray(),rotY:p.rot.y}); peer.send({t:'score',id:localPlayerId,score:scores[localPlayerId]});}},100);
 
-  // Initial render
-  function renderAll(){ renderGames(''); renderTimers(); renderFolders(); renderSelectedFolder(); }
-  renderAll();
+function networkedShoot(id,origin,dir){if(peer&&peer.isConnected)peer.send({t:'shoot',id,pos:origin.toArray(),dir:dir.toArray()});}
 
-  // Utilities
-  function uid(){ return 'id_'+Math.random().toString(36).slice(2,10); }
+// --- Input ---
+window.addEventListener('keydown',e=>{keys[e.code]=true; if(e.code==='Space'&&canJump){velocity.y=jumpStrength;canJump=false;} if(e.code==='Tab'){e.preventDefault(); toggleSplit();}});
+window.addEventListener('keyup',e=>{keys[e.code]=false;});
+renderer.domElement.addEventListener('mousemove',e=>{if(!pointerLocked&&!mouseDown)return; yaw-= (e.movementX||0)*0.002; pitch-=(e.movementY||0)*0.002; pitch=Math.max(-Math.PI/2,Math.min(Math.PI/2,pitch)); players[localPlayerId].rot.x=pitch; players[localPlayerId].rot.y=yaw;});
+renderer.domElement.addEventListener('mousedown',e=>{mouseDown=true; if(e.button===0){shoot(localPlayerId); const pl=players[localPlayerId]; const dir=new THREE.Vector3(Math.sin(pl.rot.y),Math.sin(pl.rot.x),Math.cos(pl.rot.y)).normalize(); const origin=pl.mesh.position.clone().add(new THREE.Vector3(0,0.6,0)).add(dir.clone().multiplyScalar(1.0)); networkedShoot(localPlayerId,origin,dir);} if(renderer.domElement.requestPointerLock)renderer.domElement.requestPointerLock();});
+document.addEventListener('pointerlockchange',()=>{pointerLocked=document.pointerLockElement===renderer.domElement;});
 
+// --- Resize ---
+window.addEventListener('resize',()=>{renderer.setSize(window.innerWidth,window.innerHeight); camera1.aspect=window.innerWidth/window.innerHeight; camera1.updateProjectionMatrix(); camera2.aspect=window.innerWidth/window.innerHeight; camera2.updateProjectionMatrix();});
+renderer.setSize(window.innerWidth,window.innerHeight);
 
-  // small helpers
-  function renderGamesDelayed(){ setTimeout(()=>renderGames(document.getElementById('searchGames').value),50); }
+// --- UI ---
+$('toggleSplit').addEventListener('click',toggleSplit);
+$('spawnBot').addEventListener('click',()=>{spawnBot(); log('Bot spawned');});
+function toggleSplit(){splitScreen=!splitScreen; log('Split-screen: '+(splitScreen?'on':'off'));}
 
-  // Friendly first-run toast
-  if(!localStorage.getItem('ygg_seen_welcome')){ showToast('Welcome Yoda\'s Gaming Galaxy! Press N to add game, T for timer.'); localStorage.setItem('ygg_seen_welcome','1'); }
+// --- Main loop ---
+clock=new THREE.Clock();
+function animate(){const dt=Math.min(0.05,clock.getDelta()); requestAnimationFrame(animate); updateLocalPlayer(dt); updateProjectiles(dt); updateBots(dt);
+  for(const id in players){const p=players[id]; if(p.targetPos)p.mesh.position.lerp(p.targetPos,0.1);}
+  renderer.setScissorTest(true);
+  if(splitScreen){
+    renderer.setViewport(0,0,window.innerWidth/2,window.innerHeight); renderer.setScissor(0,0,window.innerWidth/2,window.innerHeight); camera1.position.copy(players[localPlayerId].mesh.position).add(new THREE.Vector3(0,2,5)); camera1.lookAt(players[localPlayerId].mesh.position); renderer.render(scene,camera1);
+    renderer.setViewport(window.innerWidth/2,0,window.innerWidth/2,window.innerHeight); renderer.setScissor(window.innerWidth/2,0,window.innerWidth/2,window.innerHeight); camera2.position.copy(players[localPlayerId].mesh.position).add(new THREE.Vector3(0,2,-5)); camera2.lookAt(players[localPlayerId].mesh.position); renderer.render(scene,camera2);
+  } else {
+    renderer.setViewport(0,0,window.innerWidth,window.innerHeight); renderer.setScissor(0,0,window.innerWidth,window.innerHeight); camera1.position.copy(players[localPlayerId].mesh.position).add(new THREE.Vector3(0,2,5)); camera1.lookAt(players[localPlayerId].mesh.position); renderer.render(scene,camera1);
+  }
+  renderer.setScissorTest(false);
+  $('score').innerText='You: '+scores[localPlayerId];
+}
+animate();
 
-  // expose some debug on window
-  window.ygg = {store, saveStore};
-
-  </script>
+</script>
+<script type="module" src="https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js"></script>
 </body>
 </html>
