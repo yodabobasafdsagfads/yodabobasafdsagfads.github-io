@@ -1,806 +1,539 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P 3D Multiplayer Game</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>P2P 3D Multiplayer — Hybrid Maps + Voting</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        #gameCanvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
-        
-        #lobbyUI {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        
-        #lobbyUI.hidden {
-            display: none;
-        }
-        
-        h1 {
-            color: #667eea;
-            margin-bottom: 20px;
-            text-align: center;
-            font-size: 24px;
-        }
-        
-        h2 {
-            color: #764ba2;
-            margin: 20px 0 10px 0;
-            font-size: 18px;
-        }
-        
-        .section {
-            margin-bottom: 25px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        
-        textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 12px;
-            font-family: monospace;
-            resize: vertical;
-            min-height: 80px;
-        }
-        
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            width: 100%;
-            margin: 5px 0;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .status {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            font-size: 14px;
-            text-align: center;
-            font-weight: bold;
-        }
-        
-        .status.info {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-        
-        .status.success {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .status.error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        #gameUI {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            font-size: 16px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-            pointer-events: none;
-        }
-        
-        #gameUI.hidden {
-            display: none;
-        }
-        
-        #crosshair {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
-            pointer-events: none;
-        }
-        
-        #crosshair::before,
-        #crosshair::after {
-            content: '';
-            position: absolute;
-            background: white;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
-        }
-        
-        #crosshair::before {
-            width: 2px;
-            height: 20px;
-            left: 9px;
-            top: 0;
-        }
-        
-        #crosshair::after {
-            width: 20px;
-            height: 2px;
-            left: 0;
-            top: 9px;
-        }
-        
-        .label {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 5px;
-        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%}
+        body{font-family:Inter,Segoe UI,system-ui,Arial;background:linear-gradient(135deg,#0f172a,#0b1220);color:#e6eef8;overflow:hidden}
+        #gameCanvas{display:block;width:100vw;height:100vh}
+
+        /* Lobby / Controls */
+        #lobbyUI{position:absolute;left:20px;top:20px;width:360px;background:rgba(255,255,255,0.04);backdrop-filter:blur(6px);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.06)}
+        #lobbyUI h1{font-size:18px;color:#a7b5ff;margin-bottom:8px}
+        .section{margin-bottom:12px}
+        input[type=text],textarea,select{width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.25);color:#e6eef8}
+        button{width:100%;padding:10px;border-radius:8px;border:none;background:linear-gradient(90deg,#667eea,#764ba2);color:white;font-weight:600;cursor:pointer}
+        button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+        .label{font-size:12px;color:#8b98c7;margin-bottom:6px}
+        .small{font-size:12px;color:#9fb0ff}
+
+        /* Map voting UI */
+        #voteContainer{display:flex;gap:8px}
+        .mapCard{background:rgba(0,0,0,0.25);padding:8px;border-radius:8px;width:100px;text-align:center}
+        .mapTitle{font-size:12px;margin-top:6px}
+        .mapThumb{width:100px;height:60px;border-radius:6px;background:#111}
+        #voteBar{height:8px;background:rgba(255,255,255,0.06);border-radius:6px;overflow:hidden;margin-top:6px}
+        .voteFill{height:100%}
+
+        /* In-game HUD */
+        #gameUI{position:absolute;right:20px;top:20px;width:260px;background:rgba(0,0,0,0.25);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.04)}
+        #mapName{font-weight:700;color:#ffd28a}
+        #playerCount{font-weight:600}
+        #timer{font-size:14px}
+
+        #crosshair{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:18px;height:18px;pointer-events:none}
+        #crosshair:before,#crosshair:after{content:'';position:absolute;background:#fff}
+        #crosshair:before{width:2px;height:18px;left:8px}
+        #crosshair:after{height:2px;width:18px;top:8px}
+
+        .status{margin-top:8px;padding:8px;border-radius:8px;background:rgba(0,0,0,0.18);font-size:13px}
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
-    
+
     <div id="lobbyUI">
-        <h1>🎮 P2P 3D Multiplayer</h1>
-        
+        <h1>🎮 P2P Multiplayer — Hybrid Maps & Voting</h1>
+
         <div class="section">
-            <h2>Player Name</h2>
-            <input type="text" id="playerName" placeholder="Enter your name" value="Player">
+            <div class="label">Player name</div>
+            <input id="playerName" type="text" value="Player">
         </div>
-        
+
         <div class="section">
-            <h2>Host Game</h2>
-            <button id="hostBtn">Create Game</button>
-            <div class="label">Share this offer with your friend:</div>
-            <textarea id="offerText" readonly placeholder="Click 'Create Game' to generate offer..."></textarea>
-            <div class="label">Paste answer from friend here:</div>
-            <textarea id="answerInput" placeholder="Paste answer here..."></textarea>
-            <button id="connectHostBtn" disabled>Connect as Host</button>
+            <div class="label">Network</div>
+            <button id="hostBtn">Create Game (Host)</button>
+            <textarea id="offerText" placeholder="Offer (share)" rows="4" readonly style="margin-top:8px"></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px">
+                <textarea id="answerInput" placeholder="Paste answer here" rows="3" style="flex:1"></textarea>
+                <button id="connectHostBtn" class="ghost" style="width:120px">Connect</button>
+            </div>
+
+            <hr style="border:none;border-top:1px dashed rgba(255,255,255,0.04);margin:10px 0">
+
+            <div class="label">Join an existing game</div>
+            <textarea id="offerInput" placeholder="Paste host offer" rows="3"></textarea>
+            <button id="joinBtn" class="ghost" style="margin-top:8px">Join Game</button>
+            <textarea id="answerText" rows="3" readonly placeholder="Answer (send to host)" style="margin-top:8px"></textarea>
         </div>
-        
+
         <div class="section">
-            <h2>Join Game</h2>
-            <div class="label">Paste offer from host here:</div>
-            <textarea id="offerInput" placeholder="Paste offer here..."></textarea>
-            <button id="joinBtn">Join Game</button>
-            <div class="label">Share this answer with host:</div>
-            <textarea id="answerText" readonly placeholder="Click 'Join Game' after pasting offer..."></textarea>
+            <div class="label">Map voting</div>
+            <div id="voteContainer"></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+                <button id="startVoteBtn">Start Vote (Host)</button>
+                <button id="randomMapBtn" class="ghost">Random Map</button>
+            </div>
+            <div id="voteInfo" class="small">No vote active</div>
         </div>
-        
-        <div id="statusMessage"></div>
+
+        <div class="section">
+            <div id="statusMessage" class="status">Ready — create or join a game, or press Enter to play solo</div>
+        </div>
     </div>
-    
-    <div id="gameUI" class="hidden">
-        <div>Players Online: <span id="playerCount">1</span></div>
-        <div>Controls: WASD - Move | Space - Jump | Click - Shoot</div>
+
+    <div id="gameUI" style="display:none">
+        <div>Map: <span id="mapName">—</span></div>
+        <div>Players: <span id="playerCount">1</span></div>
+        <div id="timer"> </div>
     </div>
-    
-    <div id="crosshair" class="hidden"></div>
-    
+
+    <div id="crosshair" style="display:none"></div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // ==================== GLOBAL STATE ====================
-        const STUN_SERVERS = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-            ]
-        };
-        
-        let peerConnection = null;
-        let dataChannel = null;
-        let isHost = false;
-        let localPlayer = null;
-        let remotePlayers = new Map();
-        let scene, camera, renderer, ground;
-        let keys = {};
-        let playerName = 'Player';
-        let gameStarted = false;
-        let projectiles = [];
-        
-        // ==================== DOM ELEMENTS ====================
-        const lobbyUI = document.getElementById('lobbyUI');
-        const gameUI = document.getElementById('gameUI');
-        const crosshair = document.getElementById('crosshair');
-        const playerNameInput = document.getElementById('playerName');
-        const hostBtn = document.getElementById('hostBtn');
-        const joinBtn = document.getElementById('joinBtn');
-        const connectHostBtn = document.getElementById('connectHostBtn');
-        const offerText = document.getElementById('offerText');
-        const offerInput = document.getElementById('offerInput');
-        const answerText = document.getElementById('answerText');
-        const answerInput = document.getElementById('answerInput');
-        const statusMessage = document.getElementById('statusMessage');
-        const playerCount = document.getElementById('playerCount');
-        
-        // ==================== UTILITY FUNCTIONS ====================
-        function showStatus(message, type = 'info') {
-            statusMessage.innerHTML = message;
-            statusMessage.className = `status ${type}`;
+    // ========================= CORE STATE =========================
+    const STUN_SERVERS = { iceServers: [ { urls: 'stun:stun.l.google.com:19302' } ] };
+
+    let peerConnection = null;
+    let dataChannel = null;
+    let isHost = false;
+    let playerName = 'Player';
+    let localPlayer = null;
+    let remotePlayers = new Map();
+    let scene, camera, renderer;
+    let keys = {};
+    let gameStarted = false;
+    let projectiles = [];
+
+    // DOM
+    const offerText = document.getElementById('offerText');
+    const offerInput = document.getElementById('offerInput');
+    const answerText = document.getElementById('answerText');
+    const answerInput = document.getElementById('answerInput');
+    const hostBtn = document.getElementById('hostBtn');
+    const joinBtn = document.getElementById('joinBtn');
+    const connectHostBtn = document.getElementById('connectHostBtn');
+    const startVoteBtn = document.getElementById('startVoteBtn');
+    const randomMapBtn = document.getElementById('randomMapBtn');
+    const voteContainer = document.getElementById('voteContainer');
+    const mapNameEl = document.getElementById('mapName');
+    const playerCountEl = document.getElementById('playerCount');
+    const voteInfo = document.getElementById('voteInfo');
+    const statusMessage = document.getElementById('statusMessage');
+    const gameUI = document.getElementById('gameUI');
+    const crosshair = document.getElementById('crosshair');
+
+    // ========================= UTIL =========================
+    function showStatus(msg){ statusMessage.textContent = msg; }
+    function generateId(){ return Math.random().toString(36).slice(2,9); }
+
+    // ========================= MAPS & MAP MANAGER =========================
+    class MapManager{
+        constructor(scene){
+            this.scene = scene;
+            this.current = null; // map object
+            this.maps = [];
+            this._registerMaps();
         }
-        
-        function generateId() {
-            return Math.random().toString(36).substr(2, 9);
+
+        _registerMaps(){
+            // Preset: Flat Field
+            this.maps.push({ id:'flat', title:'Flat Field', generator: this._flatField.bind(this), type:'preset' });
+
+            // Preset: City Blocks
+            this.maps.push({ id:'city', title:'City Blocks', generator: this._cityBlocks.bind(this), type:'preset' });
+
+            // Preset: Floating Islands
+            this.maps.push({ id:'islands', title:'Floating Isles', generator: this._floatingIslands.bind(this), type:'preset' });
+
+            // Procedural: Noise hills (hybrid)
+            this.maps.push({ id:'proc_hills', title:'Procedural Hills', generator: (opts) => this._proceduralHills(opts), type:'procedural' });
+
+            // Procedural: Random Obstacles
+            this.maps.push({ id:'proc_obstacles', title:'Random Obstacles', generator: (opts) => this._proceduralObstacles(opts), type:'procedural' });
         }
-        
-        // ==================== WEBRTC SIGNALING ====================
-        async function createPeerConnection() {
-            peerConnection = new RTCPeerConnection(STUN_SERVERS);
-            
-            peerConnection.onicecandidate = (event) => {
-                // ICE candidates are included in the offer/answer
-            };
-            
-            peerConnection.onconnectionstatechange = () => {
-                console.log('Connection state:', peerConnection.connectionState);
-                if (peerConnection.connectionState === 'connected') {
-                    showStatus('Connected! Starting game...', 'success');
-                    setTimeout(startGame, 1000);
-                } else if (peerConnection.connectionState === 'disconnected' || 
-                           peerConnection.connectionState === 'failed') {
-                    showStatus('Connection lost', 'error');
-                }
-            };
-            
-            return peerConnection;
+
+        getMapList(){
+            return this.maps.map(m => ({id:m.id,title:m.title,type:m.type}));
         }
-        
-        async function hostGame() {
-            playerName = playerNameInput.value.trim() || 'Player';
-            isHost = true;
-            
-            showStatus('Creating game...', 'info');
-            hostBtn.disabled = true;
-            
-            await createPeerConnection();
-            
-            // Host creates the data channel
-            dataChannel = peerConnection.createDataChannel('game');
-            setupDataChannel();
-            
-            // Create offer
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            
-            // Wait for ICE gathering to complete
-            await new Promise((resolve) => {
-                if (peerConnection.iceGatheringState === 'complete') {
-                    resolve();
-                } else {
-                    peerConnection.addEventListener('icegatheringstatechange', () => {
-                        if (peerConnection.iceGatheringState === 'complete') {
-                            resolve();
-                        }
-                    });
-                }
-            });
-            
-            offerText.value = JSON.stringify(peerConnection.localDescription);
-            connectHostBtn.disabled = false;
-            showStatus('Share the offer with your friend, then paste their answer below', 'info');
-        }
-        
-        async function connectAsHost() {
-            const answerStr = answerInput.value.trim();
-            if (!answerStr) {
-                showStatus('Please paste the answer first', 'error');
-                return;
+
+        loadMap(id, seed){
+            // remove previous
+            if(this.current && this.current.group){
+                this.scene.remove(this.current.group);
+                // dispose geometries quick-clean (not exhaustive)
+                this.current.group.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material) o.material.dispose(); });
             }
-            
-            try {
-                const answer = JSON.parse(answerStr);
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-                showStatus('Connecting...', 'info');
-                connectHostBtn.disabled = true;
-            } catch (error) {
-                showStatus('Invalid answer format', 'error');
-                console.error(error);
+            const mapDef = this.maps.find(m=>m.id===id) || this.maps[0];
+            const grp = new THREE.Group();
+            this.scene.add(grp);
+            this.current = { id: mapDef.id, title: mapDef.title, group: grp };
+            // call generator
+            mapDef.generator({ group:grp, seed:seed||Math.random() });
+            mapNameEl.textContent = this.current.title;
+        }
+
+        // --- Map generators ---
+        _flatField(opts){
+            const group = opts.group;
+            // simple textured-ish ground
+            const geom = new THREE.PlaneGeometry(200,200,1,1);
+            const mat = new THREE.MeshLambertMaterial({ color:0x3a7a57 });
+            const mesh = new THREE.Mesh(geom,mat);
+            mesh.rotation.x = -Math.PI/2;
+            mesh.receiveShadow = true;
+            group.add(mesh);
+
+            // add a few props
+            for(let i=0;i<16;i++){
+                const box = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), new THREE.MeshLambertMaterial({color:0x6b4a2b}));
+                box.position.set((Math.random()-0.5)*100,1,(Math.random()-0.5)*100);
+                box.castShadow=true; group.add(box);
             }
         }
-        
-        async function joinGame() {
-            playerName = playerNameInput.value.trim() || 'Player';
-            isHost = false;
-            
-            const offerStr = offerInput.value.trim();
-            if (!offerStr) {
-                showStatus('Please paste the offer first', 'error');
-                return;
-            }
-            
-            showStatus('Joining game...', 'info');
-            joinBtn.disabled = true;
-            
-            try {
-                await createPeerConnection();
-                
-                // Peer receives the data channel
-                peerConnection.ondatachannel = (event) => {
-                    dataChannel = event.channel;
-                    setupDataChannel();
-                };
-                
-                const offer = JSON.parse(offerStr);
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-                
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-                
-                // Wait for ICE gathering
-                await new Promise((resolve) => {
-                    if (peerConnection.iceGatheringState === 'complete') {
-                        resolve();
-                    } else {
-                        peerConnection.addEventListener('icegatheringstatechange', () => {
-                            if (peerConnection.iceGatheringState === 'complete') {
-                                resolve();
-                            }
-                        });
-                    }
-                });
-                
-                answerText.value = JSON.stringify(peerConnection.localDescription);
-                showStatus('Share the answer with the host', 'success');
-            } catch (error) {
-                showStatus('Invalid offer format', 'error');
-                console.error(error);
-                joinBtn.disabled = false;
-            }
-        }
-        
-        function setupDataChannel() {
-            dataChannel.onopen = () => {
-                console.log('Data channel opened');
-                // Send initial handshake
-                sendData({
-                    type: 'handshake',
-                    name: playerName,
-                    id: localPlayer ? localPlayer.id : generateId()
-                });
-            };
-            
-            dataChannel.onmessage = (event) => {
-                handleDataChannelMessage(JSON.parse(event.data));
-            };
-            
-            dataChannel.onclose = () => {
-                console.log('Data channel closed');
-            };
-        }
-        
-        function sendData(data) {
-            if (dataChannel && dataChannel.readyState === 'open') {
-                dataChannel.send(JSON.stringify(data));
-            }
-        }
-        
-        function handleDataChannelMessage(data) {
-            switch (data.type) {
-                case 'handshake':
-                    createRemotePlayer(data.id, data.name);
-                    // Send back our info
-                    sendData({
-                        type: 'handshake',
-                        name: playerName,
-                        id: localPlayer.id
-                    });
-                    updatePlayerCount();
-                    break;
-                    
-                case 'position':
-                    updateRemotePlayer(data.id, data);
-                    break;
-                    
-                case 'shoot':
-                    createRemoteProjectile(data);
-                    break;
-            }
-        }
-        
-        // ==================== THREE.JS GAME SETUP ====================
-        function initGame() {
-            // Scene
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87ceeb);
-            scene.fog = new THREE.Fog(0x87ceeb, 0, 300);
-            
-            // Camera
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 5, 10);
-            
-            // Renderer
-            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas'), antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            
-            // Lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-            
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(50, 50, 25);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            directionalLight.shadow.camera.left = -50;
-            directionalLight.shadow.camera.right = 50;
-            directionalLight.shadow.camera.top = 50;
-            directionalLight.shadow.camera.bottom = -50;
-            scene.add(directionalLight);
-            
-            // Ground
-            const groundGeometry = new THREE.PlaneGeometry(200, 200);
-            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x4a7c59 });
-            ground = new THREE.Mesh(groundGeometry, groundMaterial);
-            ground.rotation.x = -Math.PI / 2;
-            ground.receiveShadow = true;
-            scene.add(ground);
-            
-            // Add some visual elements to ground
-            const gridHelper = new THREE.GridHelper(200, 40, 0x000000, 0x000000);
-            gridHelper.material.opacity = 0.1;
-            gridHelper.material.transparent = true;
-            scene.add(gridHelper);
-            
-            // Create local player
-            localPlayer = createPlayer(generateId(), playerName, true);
-            localPlayer.mesh.position.set(Math.random() * 10 - 5, 2, Math.random() * 10 - 5);
-            
-            // Input handlers
-            document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
-            document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
-            document.addEventListener('click', shoot);
-            
-            // Handle window resize
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-        }
-        
-        function createPlayer(id, name, isLocal = false) {
-            const player = {
-                id: id,
-                name: name,
-                isLocal: isLocal,
-                velocity: new THREE.Vector3(),
-                rotation: 0,
-                onGround: true
-            };
-            
-            // Create player mesh (capsule-like shape)
-            const bodyGeometry = new THREE.BoxGeometry(1, 2, 1);
-            const bodyMaterial = new THREE.MeshLambertMaterial({ 
-                color: isLocal ? 0x4488ff : 0xff4444 
-            });
-            player.mesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
-            player.mesh.castShadow = true;
-            player.mesh.receiveShadow = true;
-            
-            // Add head
-            const headGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-            const headMaterial = new THREE.MeshLambertMaterial({ 
-                color: isLocal ? 0x5599ff : 0xff5555 
-            });
-            const head = new THREE.Mesh(headGeometry, headMaterial);
-            head.position.y = 1.5;
-            head.castShadow = true;
-            player.mesh.add(head);
-            
-            scene.add(player.mesh);
-            
-            // Create name label
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.width = 256;
-            canvas.height = 64;
-            context.fillStyle = 'rgba(0, 0, 0, 0.6)';
-            context.fillRect(0, 0, canvas.width, canvas.height);
-            context.font = 'Bold 32px Arial';
-            context.fillStyle = 'white';
-            context.textAlign = 'center';
-            context.fillText(name, canvas.width / 2, 42);
-            
-            const texture = new THREE.CanvasTexture(canvas);
-            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-            player.nameSprite = new THREE.Sprite(spriteMaterial);
-            player.nameSprite.position.y = 3;
-            player.nameSprite.scale.set(4, 1, 1);
-            player.mesh.add(player.nameSprite);
-            
-            return player;
-        }
-        
-        function createRemotePlayer(id, name) {
-            if (!remotePlayers.has(id)) {
-                const player = createPlayer(id, name, false);
-                player.mesh.position.set(Math.random() * 10 - 5, 2, Math.random() * 10 - 5);
-                player.targetPosition = player.mesh.position.clone();
-                player.targetRotation = 0;
-                remotePlayers.set(id, player);
-            }
-        }
-        
-        function updateRemotePlayer(id, data) {
-            let player = remotePlayers.get(id);
-            if (!player) {
-                createRemotePlayer(id, data.name || 'Player');
-                player = remotePlayers.get(id);
-            }
-            
-            player.targetPosition = new THREE.Vector3(data.x, data.y, data.z);
-            player.targetRotation = data.rotation;
-        }
-        
-        function startGame() {
-            lobbyUI.classList.add('hidden');
-            gameUI.classList.remove('hidden');
-            crosshair.classList.remove('hidden');
-            gameStarted = true;
-            
-            if (!scene) {
-                initGame();
-            }
-            
-            updatePlayerCount();
-            animate();
-        }
-        
-        function updatePlayerCount() {
-            playerCount.textContent = 1 + remotePlayers.size;
-        }
-        
-        // ==================== GAME LOGIC ====================
-        function updateLocalPlayer(delta) {
-            if (!localPlayer) return;
-            
-            const moveSpeed = 10 * delta;
-            const jumpForce = 8;
-            const gravity = -20 * delta;
-            
-            // Movement
-            const forward = new THREE.Vector3(0, 0, -1);
-            const right = new THREE.Vector3(1, 0, 0);
-            
-            forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), localPlayer.rotation);
-            right.applyAxisAngle(new THREE.Vector3(0, 1, 0), localPlayer.rotation);
-            
-            if (keys['w']) localPlayer.mesh.position.add(forward.multiplyScalar(moveSpeed));
-            if (keys['s']) localPlayer.mesh.position.add(forward.multiplyScalar(-moveSpeed));
-            if (keys['a']) localPlayer.mesh.position.add(right.multiplyScalar(-moveSpeed));
-            if (keys['d']) localPlayer.mesh.position.add(right.multiplyScalar(moveSpeed));
-            
-            // Rotation
-            if (keys['q']) localPlayer.rotation += 2 * delta;
-            if (keys['e']) localPlayer.rotation -= 2 * delta;
-            
-            // Jumping
-            if (keys[' '] && localPlayer.onGround) {
-                localPlayer.velocity.y = jumpForce;
-                localPlayer.onGround = false;
-            }
-            
-            // Apply gravity
-            localPlayer.velocity.y += gravity;
-            localPlayer.mesh.position.y += localPlayer.velocity.y * delta;
-            
-            // Ground collision
-            if (localPlayer.mesh.position.y <= 2) {
-                localPlayer.mesh.position.y = 2;
-                localPlayer.velocity.y = 0;
-                localPlayer.onGround = true;
-            }
-            
-            // Keep player in bounds
-            localPlayer.mesh.position.x = Math.max(-95, Math.min(95, localPlayer.mesh.position.x));
-            localPlayer.mesh.position.z = Math.max(-95, Math.min(95, localPlayer.mesh.position.z));
-            
-            // Update mesh rotation
-            localPlayer.mesh.rotation.y = localPlayer.rotation;
-            
-            // Update camera (third person)
-            const cameraDistance = 8;
-            const cameraHeight = 4;
-            camera.position.x = localPlayer.mesh.position.x - Math.sin(localPlayer.rotation) * cameraDistance;
-            camera.position.y = localPlayer.mesh.position.y + cameraHeight;
-            camera.position.z = localPlayer.mesh.position.z - Math.cos(localPlayer.rotation) * cameraDistance;
-            camera.lookAt(localPlayer.mesh.position);
-            
-            // Send position update
-            if (dataChannel && dataChannel.readyState === 'open') {
-                sendData({
-                    type: 'position',
-                    id: localPlayer.id,
-                    name: localPlayer.name,
-                    x: localPlayer.mesh.position.x,
-                    y: localPlayer.mesh.position.y,
-                    z: localPlayer.mesh.position.z,
-                    rotation: localPlayer.rotation
-                });
-            }
-        }
-        
-        function updateRemotePlayers(delta) {
-            remotePlayers.forEach(player => {
-                // Smooth interpolation
-                if (player.targetPosition) {
-                    player.mesh.position.lerp(player.targetPosition, 10 * delta);
-                }
-                
-                // Smooth rotation
-                if (player.targetRotation !== undefined) {
-                    let rotDiff = player.targetRotation - player.mesh.rotation.y;
-                    while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
-                    while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
-                    player.mesh.rotation.y += rotDiff * 10 * delta;
-                }
-            });
-        }
-        
-        function shoot() {
-            if (!gameStarted || !localPlayer) return;
-            
-            const projectile = {
-                id: generateId(),
-                position: localPlayer.mesh.position.clone(),
-                position: new THREE.Vector3(
-                    localPlayer.mesh.position.x,
-                    localPlayer.mesh.position.y + 1,
-                    localPlayer.mesh.position.z
-                ),
-                direction: new THREE.Vector3(
-                    -Math.sin(localPlayer.rotation),
-                    0,
-                    -Math.cos(localPlayer.rotation)
-                ),
-                speed: 30,
-                lifetime: 3,
-                age: 0
-            };
-            
-            // Create projectile mesh
-            const geometry = new THREE.SphereGeometry(0.2, 8, 8);
-            const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-            projectile.mesh = new THREE.Mesh(geometry, material);
-            projectile.mesh.position.copy(projectile.position);
-            scene.add(projectile.mesh);
-            
-            projectiles.push(projectile);
-            
-            // Send shoot message
-            sendData({
-                type: 'shoot',
-                x: projectile.position.x,
-                y: projectile.position.y,
-                z: projectile.position.z,
-                dx: projectile.direction.x,
-                dy: projectile.direction.y,
-                dz: projectile.direction.z
-            });
-        }
-        
-        function createRemoteProjectile(data) {
-            const projectile = {
-                id: generateId(),
-                position: new THREE.Vector3(data.x, data.y, data.z),
-                direction: new THREE.Vector3(data.dx, data.dy, data.dz),
-                speed: 30,
-                lifetime: 3,
-                age: 0
-            };
-            
-            const geometry = new THREE.SphereGeometry(0.2, 8, 8);
-            const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-            projectile.mesh = new THREE.Mesh(geometry, material);
-            projectile.mesh.position.copy(projectile.position);
-            scene.add(projectile.mesh);
-            
-            projectiles.push(projectile);
-        }
-        
-        function updateProjectiles(delta) {
-            for (let i = projectiles.length - 1; i >= 0; i--) {
-                const proj = projectiles[i];
-                
-                proj.position.add(proj.direction.clone().multiplyScalar(proj.speed * delta));
-                proj.mesh.position.copy(proj.position);
-                proj.age += delta;
-                
-                // Remove old projectiles
-                if (proj.age > proj.lifetime || proj.position.y < 0) {
-                    scene.remove(proj.mesh);
-                    projectiles.splice(i, 1);
+
+        _cityBlocks(opts){
+            const group = opts.group;
+            // ground
+            const geom = new THREE.PlaneGeometry(200,200,1,1);
+            const mat = new THREE.MeshLambertMaterial({ color:0x222834 });
+            const mesh = new THREE.Mesh(geom,mat);
+            mesh.rotation.x = -Math.PI/2; mesh.receiveShadow=true; group.add(mesh);
+
+            // grid of blocks/outlines
+            const size = 10; const spacing = 12;
+            for(let x=-size;x<=size;x++){
+                for(let z=-size;z<=size;z++){
+                    if(Math.random()<0.6) continue; // some empty streets
+                    const h = 2 + Math.random()*8;
+                    const b = new THREE.Mesh(new THREE.BoxGeometry(8,h,8), new THREE.MeshLambertMaterial({color:0x888899}));
+                    b.position.set(x*spacing, h/2, z*spacing);
+                    b.castShadow=true; group.add(b);
                 }
             }
         }
-        
-        // ==================== ANIMATION LOOP ====================
-        let lastTime = performance.now();
-        
-        function animate() {
-            if (!gameStarted) return;
-            
-            requestAnimationFrame(animate);
-            
-            const currentTime = performance.now();
-            const delta = (currentTime - lastTime) / 1000;
-            lastTime = currentTime;
-            
-            updateLocalPlayer(delta);
-            updateRemotePlayers(delta);
-            updateProjectiles(delta);
-            
-            renderer.render(scene, camera);
+
+        _floatingIslands(opts){
+            const group = opts.group;
+            // add multiple small islands elevated above ground
+            for(let i=0;i<8;i++){
+                const x = (Math.random()-0.5)*120;
+                const z = (Math.random()-0.5)*120;
+                const y = 6 + Math.random()*20;
+                const geom = new THREE.SphereGeometry(6+Math.random()*6,12,8);
+                const mat = new THREE.MeshLambertMaterial({color:0x4a6a3f});
+                const island = new THREE.Mesh(geom,mat);
+                island.scale.y = 0.5; island.position.set(x,y,z); island.castShadow=true;
+                group.add(island);
+                // vegetation
+                if(Math.random()>0.4){
+                    const tree = new THREE.Mesh(new THREE.ConeGeometry(1.2,4,8), new THREE.MeshLambertMaterial({color:0x2f5b31}));
+                    tree.position.set(x,y+3,z); group.add(tree);
+                }
+            }
+            // add a subtle big sky-plane as visual
+            const g = new THREE.PlaneGeometry(400,400,1,1);
+            const m = new THREE.MeshLambertMaterial({color:0x223044}); const ground = new THREE.Mesh(g,m); ground.rotation.x=-Math.PI/2; ground.position.y=-20; group.add(ground);
         }
-        
-        // ==================== EVENT LISTENERS ====================
-        hostBtn.addEventListener('click', hostGame);
-        joinBtn.addEventListener('click', joinGame);
-        connectHostBtn.addEventListener('click', connectAsHost);
-        
-        // Allow starting solo
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !gameStarted) {
-                playerName = playerNameInput.value.trim() || 'Player';
+
+        _proceduralHills(opts){
+            const group = opts.group; const seed = opts.seed||Math.random();
+            const seg = 128, size = 180;
+            const geom = new THREE.PlaneGeometry(size,size,seg,seg);
+            geom.rotateX(-Math.PI/2);
+            const freq = 0.08 + (seed%0.3);
+            for(let i=0;i<geom.attributes.position.count;i++){
+                const x = geom.attributes.position.getX(i);
+                const z = geom.attributes.position.getZ(i);
+                const y = Math.sin(x*freq + seed*10)*2 + Math.cos(z*freq*0.6 + seed*20)*1.5 + (Math.random()-0.5)*1.0;
+                geom.attributes.position.setY(i,y);
+            }
+            geom.computeVertexNormals();
+            const mat = new THREE.MeshLambertMaterial({color:0x3b6a45});
+            const mesh = new THREE.Mesh(geom,mat); mesh.receiveShadow=true; group.add(mesh);
+            // scatter rocks
+            for(let i=0;i<60;i++){
+                const rx = (Math.random()-0.5)*size; const rz = (Math.random()-0.5)*size; const ry = 2 + Math.random()*6;
+                const r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.6+Math.random()*1.4), new THREE.MeshLambertMaterial({color:0x6a5f4a}));
+                r.position.set(rx,ry,rz); r.castShadow=true; group.add(r);
+            }
+        }
+
+        _proceduralObstacles(opts){
+            const group = opts.group; const seed = opts.seed||Math.random();
+            const geom = new THREE.PlaneGeometry(200,200,1,1); const mat = new THREE.MeshLambertMaterial({color:0x2f3b2e}); const ground = new THREE.Mesh(geom,mat); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; group.add(ground);
+            for(let i=0;i<80;i++){
+                const s = 1 + Math.random()*4; const h = 1 + Math.random()*6;
+                const box = new THREE.Mesh(new THREE.BoxGeometry(s,h,s), new THREE.MeshLambertMaterial({color:0x5b4b3b}));
+                box.position.set((Math.random()-0.5)*160, h/2, (Math.random()-0.5)*160); box.castShadow=true; group.add(box);
+            }
+        }
+    }
+
+    // ========================= MAP VOTING =========================
+    class MapVote{
+        constructor(mapManager){
+            this.mapManager = mapManager;
+            this.votes = new Map();
+            this.active = false;
+            this.timeout = null;
+            this.timer = 0;
+            this.duration = 25; // seconds
+            this.id = generateId();
+        }
+
+        start(){
+            if(this.active) return;
+            this.active = true; this.votes.clear(); this.timer=this.duration;
+            // host broadcasts start
+            if(isHost) sendData({ type:'startVote', duration:this.duration, id:this.id });
+            this._tick(); this.renderUI();
+        }
+
+        _tick(){
+            clearInterval(this.timeout);
+            this.timeout = setInterval(()=>{
+                this.timer -= 1; this.renderUI();
+                if(this.timer<=0){ clearInterval(this.timeout); this.finish(); }
+            },1000);
+        }
+
+        vote(mapId, from){
+            this.votes.set(from||playerName, mapId);
+            // broadcast vote to host if not host
+            if(!isHost) sendData({ type:'vote', mapId:mapId, from:playerName });
+            this.renderUI();
+        }
+
+        finish(){
+            this.active=false; this.renderUI();
+            // only host decides final
+            if(isHost){
+                // count votes
+                const tally = {};
+                for(const v of this.votes.values()) tally[v] = (tally[v]||0)+1;
+                // choose winner
+                let winner=null, best=0; for(const k in tally){ if(tally[k]>best){best=tally[k]; winner=k;} }
+                if(!winner){ // random
+                    const list = this.mapManager.getMapList(); winner = list[Math.floor(Math.random()*list.length)].id;
+                }
+                // send selection
+                sendData({ type:'mapSelected', mapId:winner });
+                this.mapManager.loadMap(winner);
                 startGame();
             }
-        });
-        
-        // Initialize
-        showStatus('Enter your name and create/join a game, or press Enter to play solo', 'info');
+        }
+
+        renderUI(){
+            // render vote cards with fills
+            const list = this.mapManager.getMapList();
+            voteContainer.innerHTML = '';
+            const counts = {};
+            for(const v of this.votes.values()) counts[v] = (counts[v]||0)+1;
+            for(const m of list){
+                const card = document.createElement('div'); card.className='mapCard';
+                const thumb = document.createElement('div'); thumb.className='mapThumb'; thumb.textContent = ''; card.appendChild(thumb);
+                const title = document.createElement('div'); title.className='mapTitle'; title.textContent=m.title; card.appendChild(title);
+                const btn = document.createElement('button'); btn.textContent='Vote'; btn.style.marginTop='6px'; card.appendChild(btn);
+                btn.onclick = ()=>{ this.vote(m.id); };
+                const barWrap = document.createElement('div'); barWrap.id='voteBar'; barWrap.style.marginTop='6px';
+                const fill = document.createElement('div'); fill.className='voteFill'; fill.style.width=((counts[m.id]||0)*100)+'%'; fill.style.background='linear-gradient(90deg,#ffd28a,#ffa86b)'; barWrap.appendChild(fill);
+                card.appendChild(barWrap);
+                voteContainer.appendChild(card);
+            }
+            if(this.active){ voteInfo.textContent = `Voting — ${this.timer}s remaining` } else { voteInfo.textContent = 'No vote active' }
+        }
+    }
+
+    // ========================= NETWORKING (WebRTC datachannel) =========================
+    async function createPeerConnection(){
+        peerConnection = new RTCPeerConnection(STUN_SERVERS);
+        peerConnection.onicecandidate = (e)=>{};
+        peerConnection.onconnectionstatechange = ()=>{
+            console.log('connectionState', peerConnection.connectionState);
+            if(peerConnection.connectionState==='connected'){
+                showStatus('Connected — ready');
+                // send map state if host
+                if(isHost && mapManager && mapManager.current){
+                    sendData({ type:'mapState', mapId:mapManager.current.id });
+                }
+                setTimeout(()=>{ if(!gameStarted) startGame(); }, 600);
+            }
+        };
+        return peerConnection;
+    }
+
+    async function hostGame(){
+        playerName = document.getElementById('playerName').value.trim()||'Player';
+        isHost = true;
+        showStatus('Creating peer...'); hostBtn.disabled=true;
+        await createPeerConnection();
+        dataChannel = peerConnection.createDataChannel('game'); setupDataChannel();
+        const offer = await peerConnection.createOffer(); await peerConnection.setLocalDescription(offer);
+        await new Promise((res)=>{ if(peerConnection.iceGatheringState==='complete') res(); else peerConnection.addEventListener('icegatheringstatechange',()=>{ if(peerConnection.iceGatheringState==='complete') res(); }); });
+        offerText.value = JSON.stringify(peerConnection.localDescription);
+        connectHostBtn.disabled=false; showStatus('Share offer with friend');
+    }
+
+    async function connectAsHost(){
+        const answerStr = answerInput.value.trim(); if(!answerStr){showStatus('Paste answer');return}
+        try{ const answer = JSON.parse(answerStr); await peerConnection.setRemoteDescription(new RTCSessionDescription(answer)); showStatus('Connected (host)'); connectHostBtn.disabled=true; }catch(e){ showStatus('Invalid answer'); }
+    }
+
+    async function joinGame(){
+        playerName = document.getElementById('playerName').value.trim()||'Player';
+        isHost = false; showStatus('Joining...'); joinBtn.disabled=true;
+        try{
+            await createPeerConnection();
+            peerConnection.ondatachannel = (ev)=>{ dataChannel = ev.channel; setupDataChannel(); };
+            const offer = JSON.parse(offerInput.value);
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await peerConnection.createAnswer(); await peerConnection.setLocalDescription(answer);
+            await new Promise((res)=>{ if(peerConnection.iceGatheringState==='complete') res(); else peerConnection.addEventListener('icegatheringstatechange',()=>{ if(peerConnection.iceGatheringState==='complete') res(); }); });
+            answerText.value = JSON.stringify(peerConnection.localDescription);
+            showStatus('Share answer with host');
+        }catch(e){ console.error(e); showStatus('Invalid offer'); joinBtn.disabled=false; }
+    }
+
+    function setupDataChannel(){
+        dataChannel.onopen = ()=>{ console.log('dc open'); sendData({type:'handshake', name:playerName, id:generateId()}); };
+        dataChannel.onmessage = (ev)=>{ try{ const d = JSON.parse(ev.data); handleMessage(d); }catch(e){ console.warn('bad msg',e); } };
+        dataChannel.onclose = ()=>{ console.log('dc closed'); };
+    }
+
+    function sendData(obj){ if(dataChannel && dataChannel.readyState==='open'){ dataChannel.send(JSON.stringify(obj)); } }
+
+    function handleMessage(msg){
+        switch(msg.type){
+            case 'handshake':
+                createRemotePlayer(msg.id, msg.name);
+                // reply with our handshake if host
+                if(isHost) sendData({ type:'handshake', name:playerName, id:localPlayer ? localPlayer.id : generateId() });
+                updatePlayerCount(); break;
+            case 'position':
+                updateRemotePlayer(msg.id, msg); break;
+            case 'shoot': createRemoteProjectile(msg); break;
+            case 'startVote':
+                // non-host receives start vote
+                vote.id = msg.id; vote.duration = msg.duration; vote.active=true; vote.timer=msg.duration; vote._tick(); vote.renderUI(); break;
+            case 'vote':
+                // host receives votes
+                if(isHost && vote.active){ vote.votes.set(msg.from, msg.mapId); vote.renderUI(); }
+                break;
+            case 'mapSelected':
+                mapManager.loadMap(msg.mapId); startGame(); break;
+            case 'mapState':
+                // someone connected late; load map
+                mapManager.loadMap(msg.mapId); break;
+        }
+    }
+
+    // ========================= THREE.JS & GAME SETUP =========================
+    function initThree(){
+        const canvas = document.getElementById('gameCanvas');
+        scene = new THREE.Scene(); scene.fog = new THREE.Fog(0x87ceeb, 10, 400);
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({canvas, antialias:true}); renderer.setSize(window.innerWidth, window.innerHeight); renderer.shadowMap.enabled=true;
+
+        const ambient = new THREE.AmbientLight(0xffffff,0.6); scene.add(ambient);
+        const dir = new THREE.DirectionalLight(0xffffff,0.8); dir.position.set(60,80,40); dir.castShadow=true; scene.add(dir);
+
+        // Map manager
+        mapManager = new MapManager(scene);
+        mapList = mapManager.getMapList();
+
+        // create local player
+        localPlayer = createPlayer(generateId(), playerName, true);
+        localPlayer.mesh.position.set(0,5,0);
+
+        // initial map
+        mapManager.loadMap(mapList[0].id);
+
+        // inputs
+        document.addEventListener('keydown', e=>keys[e.key.toLowerCase()]=true);
+        document.addEventListener('keyup', e=>keys[e.key.toLowerCase()]=false);
+        document.addEventListener('click', shoot);
+
+        window.addEventListener('resize', ()=>{ camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+        // create thumbnails in UI
+        renderMapCardsUI();
+    }
+
+    function createPlayer(id, name, isLocal=false){
+        const p = { id, name, isLocal, mesh:null, velocity:new THREE.Vector3(), rotation:0, onGround:true };
+        const body = new THREE.Mesh(new THREE.BoxGeometry(1,2,1), new THREE.MeshLambertMaterial({ color: isLocal?0x4488ff:0xff4444 })); body.castShadow=true; body.position.y=2;
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.45,12,12), new THREE.MeshLambertMaterial({ color:isLocal?0x5599ff:0xff6666 })); head.position.y=1.5; body.add(head);
+        p.mesh = body; scene.add(p.mesh);
+        const canvas = document.createElement('canvas'), ctx=canvas.getContext('2d'); canvas.width=256; canvas.height=64; ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,256,64); ctx.font='30px Arial'; ctx.fillStyle='white'; ctx.textAlign='center'; ctx.fillText(name,128,40);
+        const tex = new THREE.CanvasTexture(canvas); const spr = new THREE.Sprite(new THREE.SpriteMaterial({map:tex})); spr.position.y=3.2; spr.scale.set(3.5,1.2,1.2); p.mesh.add(spr); return p;
+    }
+
+    function createRemotePlayer(id, name){ if(!remotePlayers.has(id)){ const p = createPlayer(id, name, false); p.mesh.position.set(Math.random()*10-5,2,Math.random()*10-5); p.targetPosition = p.mesh.position.clone(); remotePlayers.set(id,p); updatePlayerCount(); } }
+    function updateRemotePlayer(id, data){ let p = remotePlayers.get(id); if(!p){ createRemotePlayer(id,data.name||'Player'); p=remotePlayers.get(id); } p.targetPosition = new THREE.Vector3(data.x,data.y,data.z); p.targetRotation = data.rotation; }
+
+    function updatePlayerCount(){ playerCountEl.textContent = 1 + remotePlayers.size; }
+
+    function shoot(){ if(!gameStarted || !localPlayer) return; const dir = new THREE.Vector3(-Math.sin(localPlayer.rotation),0,-Math.cos(localPlayer.rotation)); const pos = localPlayer.mesh.position.clone(); pos.y += 1; const proj = { position:pos.clone(), direction:dir, speed:40, age:0, lifetime:3, mesh:null };
+        const g = new THREE.SphereGeometry(0.18,8,8); const m = new THREE.MeshBasicMaterial({color:0xffff55}); proj.mesh = new THREE.Mesh(g,m); proj.mesh.position.copy(pos); scene.add(proj.mesh); projectiles.push(proj);
+        sendData({ type:'shoot', x:pos.x, y:pos.y, z:pos.z, dx:dir.x, dy:dir.y, dz:dir.z }); }
+
+    function createRemoteProjectile(d){ const proj = { position:new THREE.Vector3(d.x,d.y,d.z), direction:new THREE.Vector3(d.dx,d.dy,d.dz), speed:40, age:0, lifetime:3, mesh:null }; const g = new THREE.SphereGeometry(0.18,8,8); const m = new THREE.MeshBasicMaterial({color:0xff4444}); proj.mesh = new THREE.Mesh(g,m); proj.mesh.position.copy(proj.position); scene.add(proj.mesh); projectiles.push(proj); }
+
+    // game loop
+    let lastTime = performance.now();
+    function animate(){ if(!gameStarted) return; requestAnimationFrame(animate); const now = performance.now(); const dt=(now-lastTime)/1000; lastTime=now; updateLocalPlayer(dt); updateRemotePlayers(dt); updateProjectiles(dt); renderer.render(scene,camera); }
+
+    function updateLocalPlayer(delta){ if(!localPlayer) return; const moveSpeed = 10*delta; const forward = new THREE.Vector3(0,0,-1); forward.applyAxisAngle(new THREE.Vector3(0,1,0), localPlayer.rotation);
+        const right = new THREE.Vector3(1,0,0); right.applyAxisAngle(new THREE.Vector3(0,1,0), localPlayer.rotation);
+        if(keys['w']) localPlayer.mesh.position.add(forward.multiplyScalar(moveSpeed));
+        if(keys['s']) localPlayer.mesh.position.add(forward.multiplyScalar(-moveSpeed));
+        if(keys['a']) localPlayer.mesh.position.add(right.multiplyScalar(-moveSpeed));
+        if(keys['d']) localPlayer.mesh.position.add(right.multiplyScalar(moveSpeed));
+        if(keys['q']) localPlayer.rotation += 2*delta; if(keys['e']) localPlayer.rotation -= 2*delta;
+        // gravity/jump
+        if(keys[' '] && localPlayer.onGround){ localPlayer.velocity.y = 8; localPlayer.onGround=false; }
+        localPlayer.velocity.y += -20*delta; localPlayer.mesh.position.y += localPlayer.velocity.y*delta; if(localPlayer.mesh.position.y<=2){ localPlayer.mesh.position.y=2; localPlayer.velocity.y=0; localPlayer.onGround=true; }
+        // camera
+        const camDist=8, camHeight=4; camera.position.x = localPlayer.mesh.position.x - Math.sin(localPlayer.rotation)*camDist; camera.position.y = localPlayer.mesh.position.y + camHeight; camera.position.z = localPlayer.mesh.position.z - Math.cos(localPlayer.rotation)*camDist; camera.lookAt(localPlayer.mesh.position);
+        // send position
+        if(dataChannel && dataChannel.readyState==='open') sendData({ type:'position', id:localPlayer.id, name:localPlayer.name, x:localPlayer.mesh.position.x, y:localPlayer.mesh.position.y, z:localPlayer.mesh.position.z, rotation:localPlayer.rotation }); }
+
+    function updateRemotePlayers(delta){ remotePlayers.forEach(p=>{ if(p.targetPosition) p.mesh.position.lerp(p.targetPosition, 6*delta); if(p.targetRotation!==undefined){ let rotDiff = p.targetRotation - p.mesh.rotation.y; while(rotDiff>Math.PI) rotDiff-=Math.PI*2; while(rotDiff<-Math.PI) rotDiff+=Math.PI*2; p.mesh.rotation.y += rotDiff*6*delta; } }); }
+
+    function updateProjectiles(delta){ for(let i=projectiles.length-1;i>=0;i--){ const pr = projectiles[i]; pr.position.add(pr.direction.clone().multiplyScalar(pr.speed*delta)); pr.mesh.position.copy(pr.position); pr.age+=delta; if(pr.age>pr.lifetime || pr.position.y< -10){ scene.remove(pr.mesh); projectiles.splice(i,1); } } }
+
+    // ========================= UI MAP CARDS & INTERACTIONS =========================
+    let mapManager=null; let mapList=[]; let vote=null;
+    function renderMapCardsUI(){ voteContainer.innerHTML=''; const list = mapManager.getMapList(); for(const m of list){ const card = document.createElement('div'); card.className='mapCard'; const thumb = document.createElement('div'); thumb.className='mapThumb'; thumb.textContent=''; card.appendChild(thumb); const title = document.createElement('div'); title.className='mapTitle'; title.textContent=m.title; card.appendChild(title); // preview button
+            const btn = document.createElement('button'); btn.textContent='Preview'; btn.style.marginTop='6px'; card.appendChild(btn); btn.onclick=()=>{ mapManager.loadMap(m.id); };
+            voteContainer.appendChild(card);
+    } }
+
+    // ========================= GAME START / STOP =========================
+    function startGame(){ document.getElementById('lobbyUI').style.display='none'; gameUI.style.display='block'; crosshair.style.display='block'; gameStarted=true; lastTime=performance.now(); animate(); }
+    function stopGame(){ gameStarted=false; }
+
+    // ========================= BOOTSTRAP =========================
+    hostBtn.addEventListener('click', async ()=>{ await hostGame(); });
+    connectHostBtn.addEventListener('click', async ()=>{ await connectAsHost(); });
+    joinBtn.addEventListener('click', async ()=>{ await joinGame(); });
+
+    startVoteBtn.addEventListener('click', ()=>{ if(!isHost){ showStatus('Only host can start vote'); return } if(!mapManager) return; vote.start(); });
+    randomMapBtn.addEventListener('click', ()=>{ const list=mapManager.getMapList(); const pick=list[Math.floor(Math.random()*list.length)].id; mapManager.loadMap(pick); sendData({ type:'mapSelected', mapId:pick }); startGame(); });
+
+    // prepare three and managers immediately so preview works
+    initThree(); vote = new MapVote(mapManager);
+
+    // keyboard solo start
+    document.addEventListener('keydown',(e)=>{ if(e.key==='Enter' && !gameStarted){ startGame(); } });
+
+    // initial status
+    showStatus('Ready — pick a map or create/join a P2P game');
     </script>
 </body>
 </html>
